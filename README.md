@@ -1,33 +1,35 @@
-# webhook-broker
+# AWS Infrastructure
 
-![webhook-broker CI](https://github.com/imyousuf/webhook-broker/workflows/webhook-broker%20CI/badge.svg?branch=main)
-![webhook-broker Container CI](https://github.com/imyousuf/webhook-broker/workflows/webhook-broker%20Container%20CI/badge.svg)
-[![Test Coverage](https://api.codeclimate.com/v1/badges/bf5ba73ffe2743c7c7ad/test_coverage)](https://codeclimate.com/github/imyousuf/webhook-broker/test_coverage)
-[![Maintainability](https://api.codeclimate.com/v1/badges/bf5ba73ffe2743c7c7ad/maintainability)](https://codeclimate.com/github/imyousuf/webhook-broker/maintainability)
-[![Go Report Card](https://goreportcard.com/badge/github.com/imyousuf/webhook-broker)](https://goreportcard.com/report/github.com/imyousuf/webhook-broker)
+This Terraform configuration provides a infrastructure as a code for Webhook Broker in AWS.
 
-This is a fully HTTP based Pub/Sub Broker with a goal to simplify systems architected in SOA or Microservice architecture. It aims to solve the inter service communication problem.
+## Usage
 
-## Install & Usage
+Please make sure to create a `custom_vars.auto.tfvars` file with the following variables to use Client VPN [module](./modules/client-vpn/README.md).
 
-TBD
+```terraform
+vpn_server_cert_arn = "arn:aws:acm:<REGION>:<ACCOUNT_ID>:certificate/<CERT_ARN_FOR_SERVER>"
+vpn_client_cert_arn = "arn:aws:acm:<REGION>:<ACCOUNT_ID>:certificate/<CERT_ARN_FOR_CLIENT>"
+```
 
-## Implementation Details
+Once you apply the config, it will generate a `config.ovpn` file for connecting to VPN; make sure to edit it as per Client VPN [README](./modules/client-vpn/README.md).
 
-The Tech Specs are good place to understand the implementation details -
+Also set the following variables -
 
-* [Base Release Specs](./docs/tech-specs/basic-spec.md)
+```terraform
+webhook_broker_https_cert_arn    = "arn:aws:acm:<REGION>:<ACCOUNT_ID>:certificate/<HTTPS_CERT_FOR_HOSTNAME>"
+webhook_broker_access_log_bucket = "logs-bucket"
+webhook_broker_access_log_path   = "path-prefix"
+webhook_broker_hostname          = "match-hostname-to-certificate"
+webhook_broker_log_bucket        = "cluster-log-bucket"
+webhook_broker_log_path          = "cluster/path/prefix"
+```
 
-## Contributors
+One thing to note is, when `terraform destroy` is called, it will not delete the ALB or the Route53 records; so please delete them manually for the time being.
 
-The [Project Board](https://github.com/imyousuf/webhook-broker/projects/1) represents the works slated for current release. Once you find something you want to work on please fork the project, create a topic/issue/ticket branch, once complete open a PR against master.
+The `kubernetes-dashboard` ingress controller is disabled by default as we are deploying the cluster in public subnet; please consider enabling it when deploying in a private subnet by passing [Helm Chart values](https://artifacthub.io/packages/helm/k8s-dashboard/kubernetes-dashboard).
 
-If you find any bug, please report it [here](https://github.com/imyousuf/webhook-broker/issues).
+Get login token to access the dashboard using -
 
-For all support and discussion please use the Slack Channel **`#webhook-broker`** in the [Gophers](https://gophers.slack.com/) workspace. For direct invite please email to `webhook-broker at imytech.net`.
-
-Please check [Developers](./docs/developers.md) for more developer note.
-
-## License
-
-The project is released under [ASL 2.0](./LICENSE)
+```bash
+kubectl -n kubernetes-dashboard describe secret $(kubectl -n kubernetes-dashboard get secret | grep k8s-dashboard-svc-controller-token | awk '{print $1}')
+```

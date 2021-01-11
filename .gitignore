@@ -21,15 +21,10 @@
 # IDE
 .vscode
 
-# Dependency directories (remove the comment below to include it)
-vendor/
+# Terraform related ignores
+terraform.tfstate*
+.terraform*
+kubeconfig*
 
-# Other project files/dir to ignore
-testdatadir/
-webhook-broker
-dist/
-docs/tech-specs/basic-spec-spikes/basic-spec-spikes
-webhook-broker.cfg
-integration-test/integration-test
-*.ovpn
-webhook-broker-chart-*.tgz
+# terraform customization tfvars
+custom_vars.auto.tfvars
