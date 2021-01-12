@@ -1,10 +1,35 @@
-# AWS Infrastructure
+# AWS Infrastructure for [Webhook Broker](https://github.com/imyousuf/webhook-broker)
 
-This Terraform configuration provides a infrastructure as a code for Webhook Broker in AWS.
+This Terraform configuration provides a infrastructure as a code for [Webhook Broker](https://github.com/imyousuf/webhook-broker) in AWS.
+
+## What does it do?
+
+The goal is to launch a full stack of Webhook Broker; which includes -
+
+1. VPC in 3 availability zone with 3 subnets for public, private and database
+1. AWS Client VPC to connect to the resources in private network of the VPC
+1. AWS EKS using on demand and spot instances launch configuration with ASG
+1. Set of Kubernetes services deployed for cluster management and sidecar functionality to other apps
+
+    1. AWS Instance Termination Handler
+    1. Cluster Autoscaler to scale cluster dynamically
+    1. Kubernetes Dashboard with Metrics Scrapper
+    1. `metrics-server` to make Horizontal Pod Autoscaling (HPA) to work
+    1. `external-dns` for assigning Route53 DNS to Ingress services.
+    1. AWS ALB Ingress Controller
+    1. AWS for Fluent Bit
+
+1. Elasticsearch for app log indexing (can be skipped)
+1. Webhook Broker stack
+
+    1. AWS RDS
+    1. Webhook Broker with AWS ALB and Route53 DNS set
+
+All the services installed in EKS are done through [Helm Charts](https://helm.sh/).
 
 ## Usage
 
-Please make sure to create a `custom_vars.auto.tfvars` file with the following variables to use Client VPN [module](./modules/client-vpn/README.md).
+Firstly start by making sure AWS CLI is installed and configured properly. Then please make sure to create a `custom_vars.auto.tfvars` file with the following variables to use Client VPN [module](./modules/client-vpn/README.md).
 
 ```terraform
 vpn_server_cert_arn = "arn:aws:acm:<REGION>:<ACCOUNT_ID>:certificate/<CERT_ARN_FOR_SERVER>"
@@ -31,5 +56,15 @@ The `kubernetes-dashboard` ingress controller is disabled by default as we are d
 Get login token to access the dashboard using -
 
 ```bash
+export KUBECONFIG=kubeconfig_test-eks-w7b6
 kubectl -n kubernetes-dashboard describe secret $(kubectl -n kubernetes-dashboard get secret | grep k8s-dashboard-svc-controller-token | awk '{print $1}')
 ```
+
+## Modules
+
+In creating the stack we made several parts reusable individually -
+
+1. [Client VPN](./modules/client-vpn/README.md)
+1. EKS Cluster
+1. EKS Cluster Goodies
+1. Webhook Broker
