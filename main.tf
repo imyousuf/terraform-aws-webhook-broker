@@ -3,19 +3,11 @@ provider "aws" {
 }
 
 locals {
-  cluster_name                        = "test-eks-w7b6"
-  k8s_service_account_namespace       = "kube-system"
-  k8s_dashboard_service_account_name  = "k8s-dashboard-svc-controller"
-  k8s_autoscaler_service_account_name = "cluster-autoscaler-aws-cluster-autoscaler-chart"
-  k8s_alb_service_account_name        = "aws-load-balancer-controller"
-  k8s_external_dns_account_name       = "external-dns"
-  k8s_fluentbit_account_name          = "aws-fluent-bit"
-  k8s_dashboard_namespace             = "kubernetes-dashboard"
-  k8s_w7b6_namespace                  = "webhook-broker"
-  k8s_metrics_namespace               = "metrics"
-  es_domain                           = "test-es-w7b6"
-  vpc_cidr_block                      = "20.10.0.0/16"
-  vpn_cidr_block                      = "17.10.0.0/16"
+  cluster_name       = "test-eks-w7b6"
+  es_domain          = "test-es-w7b6"
+  vpc_cidr_block     = "20.10.0.0/16"
+  vpn_cidr_block     = "17.10.0.0/16"
+  k8s_w7b6_namespace = "webhook-broker"
 }
 
 # VPC and Client VPN
@@ -154,11 +146,11 @@ CONFIG
 # EKS
 
 module "eks" {
-  source          = "./modules/simple-kubernetes/"
-  region          = var.region
-  cluster_name    = local.cluster_name
-  subnets         = module.vpc.public_subnets
-  vpc_id          = module.vpc.vpc_id
+  source       = "./modules/simple-kubernetes/"
+  region       = var.region
+  cluster_name = local.cluster_name
+  subnets      = module.vpc.public_subnets
+  vpc_id       = module.vpc.vpc_id
 }
 
 # Kubernetes and Helm Setup
@@ -186,244 +178,18 @@ provider "helm" {
   }
 }
 
-# Cluster Auto Scaler
-
-data "aws_iam_policy_document" "cluster_autoscaler" {
-  statement {
-    sid    = "clusterAutoscalerAll"
-    effect = "Allow"
-
-    actions = [
-      "autoscaling:DescribeAutoScalingGroups",
-      "autoscaling:DescribeAutoScalingInstances",
-      "autoscaling:DescribeLaunchConfigurations",
-      "autoscaling:DescribeTags",
-      "ec2:DescribeLaunchTemplateVersions",
-    ]
-
-    resources = ["*"]
-  }
-
-  statement {
-    sid    = "clusterAutoscalerOwn"
-    effect = "Allow"
-
-    actions = [
-      "autoscaling:SetDesiredCapacity",
-      "autoscaling:TerminateInstanceInAutoScalingGroup",
-      "autoscaling:UpdateAutoScalingGroup",
-    ]
-
-    resources = ["*"]
-
-    condition {
-      test     = "StringEquals"
-      variable = "autoscaling:ResourceTag/kubernetes.io/cluster/${module.eks.cluster_id}"
-      values   = ["owned"]
-    }
-
-    condition {
-      test     = "StringEquals"
-      variable = "autoscaling:ResourceTag/k8s.io/cluster-autoscaler/enabled"
-      values   = ["true"]
-    }
-  }
-}
-
-resource "aws_iam_policy" "cluster_autoscaler" {
-  name_prefix = "cluster-autoscaler"
-  description = "EKS cluster-autoscaler policy for cluster ${module.eks.cluster_id}"
-  policy      = data.aws_iam_policy_document.cluster_autoscaler.json
-}
-
-module "iam_assumable_role_admin" {
-  source                        = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
-  version                       = "3.6.0"
-  create_role                   = true
-  role_name                     = "cluster-autoscaler"
-  provider_url                  = replace(module.eks.cluster_oidc_issuer_url, "https://", "")
-  role_policy_arns              = [aws_iam_policy.cluster_autoscaler.arn]
-  oidc_fully_qualified_subjects = ["system:serviceaccount:${local.k8s_service_account_namespace}:${local.k8s_autoscaler_service_account_name}"]
-}
-
-# The following configuration are to represent - https://raw.githubusercontent.com/hashicorp/learn-terraform-provision-eks-cluster/master/kubernetes-dashboard-admin.rbac.yaml
-# From - https://learn.hashicorp.com/tutorials/terraform/eks
-resource "kubernetes_cluster_role_binding" "cluster-admin-binding" {
-  metadata {
-    name = "cluster-admin-bindings"
-  }
-  role_ref {
-    api_group = "rbac.authorization.k8s.io"
-    kind      = "ClusterRole"
-    name      = "cluster-admin"
-  }
-  subject {
-    kind      = "ServiceAccount"
-    name      = local.k8s_dashboard_service_account_name
-    namespace = local.k8s_dashboard_namespace
-  }
-}
-
-resource "helm_release" "aws-spot-termination-handler" {
-  name      = "aws-node-termination-handler"
-  namespace = local.k8s_service_account_namespace
-
-  repository = "https://aws.github.io/eks-charts"
-  chart      = "aws-node-termination-handler"
-}
-
-resource "helm_release" "cluster-autoscaler" {
-  name      = "cluster-autoscaler"
-  namespace = local.k8s_service_account_namespace
-
-  repository = "https://kubernetes.github.io/autoscaler"
-  chart      = "cluster-autoscaler-chart"
-
-  depends_on = [module.iam_assumable_role_admin]
-
-  values = [
-    templatefile("conf/cluster-autoscaler-chart-values.yml", { role_arn = module.iam_assumable_role_admin.this_iam_role_arn })
-  ]
-}
-
-# Kubernetes Dashboard
-
-resource "kubernetes_namespace" "k8s-dashboard-namespace" {
-  metadata {
-    name = local.k8s_dashboard_namespace
-  }
-}
-
-resource "helm_release" "kubernetes-dashboard" {
-  name      = "kubernetes-dashboard"
-  namespace = local.k8s_dashboard_namespace
-
-  repository = "https://kubernetes.github.io/dashboard/"
-  chart      = "kubernetes-dashboard"
-  depends_on = [kubernetes_namespace.k8s-dashboard-namespace]
-
-  set {
-    name  = "serviceAccount.name"
-    value = local.k8s_dashboard_service_account_name
-  }
-}
-
-# Metrics Server required for HPA
-
-# TODO: This chart has been deprecated, we will need to move to the new chart once official
-# https://github.com/kubernetes-sigs/metrics-server/issues/572
-resource "helm_release" "metrics-server" {
-  name      = "metrics-server"
-  namespace = local.k8s_service_account_namespace
-
-  repository = "https://charts.helm.sh/stable"
-  chart      = "metrics-server"
-  version    = "2.11.4"
-
-  depends_on = [module.eks]
-
-  set {
-    name  = "image.repository"
-    value = "k8s.gcr.io/metrics-server/metrics-server"
-  }
-
-  set {
-    name  = "image.tag"
-    value = "v0.4.1"
-  }
-}
-
-# AWS ALB Ingression Controller
-
-# This file is from - view-source:https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/main/docs/install/iam_policy.json
-# Following the documentation in https://github.com/aws/eks-charts/tree/master/stable/aws-load-balancer-controller
-resource "aws_iam_policy" "alb_ingress_controller" {
-  name_prefix = "alb-ingress"
-  description = "EKS ALB Ingress policy for cluster ${module.eks.cluster_id}"
-  policy      = file("conf/aws-alb-ingress-policy.json")
-}
-
-module "iam_assumable_role_ingress" {
-  source                        = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
-  version                       = "3.6.0"
-  create_role                   = true
-  role_name                     = "alb-ingress"
-  provider_url                  = replace(module.eks.cluster_oidc_issuer_url, "https://", "")
-  role_policy_arns              = [aws_iam_policy.alb_ingress_controller.arn]
-  oidc_fully_qualified_subjects = ["system:serviceaccount:${local.k8s_service_account_namespace}:${local.k8s_alb_service_account_name}"]
-}
-
-resource "helm_release" "alb-ingress-controller" {
-  name      = "aws-load-balancer-controller"
-  namespace = local.k8s_service_account_namespace
-
-  repository = "https://aws.github.io/eks-charts"
-  chart      = "aws-load-balancer-controller"
-
-  depends_on = [module.iam_assumable_role_ingress]
-
-  values = [templatefile("conf/alb-ingress-chart-values.yml", { role_arn = module.iam_assumable_role_ingress.this_iam_role_arn, svc_acc_name = local.k8s_alb_service_account_name, cluster_name = local.cluster_name, region = var.region, vpc_id = module.vpc.vpc_id })]
-}
-
-# External DNS
-
-resource "aws_iam_policy" "external_dns" {
-  name_prefix = "external-dns"
-  description = "External DNS policy for cluster ${module.eks.cluster_id}"
-  policy      = file("conf/external-dns-policy.json")
-}
-
-module "iam_assumable_role_external_dns" {
-  source                        = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
-  version                       = "3.6.0"
-  create_role                   = true
-  role_name                     = "external-dns"
-  provider_url                  = replace(module.eks.cluster_oidc_issuer_url, "https://", "")
-  role_policy_arns              = [aws_iam_policy.external_dns.arn]
-  oidc_fully_qualified_subjects = ["system:serviceaccount:${local.k8s_service_account_namespace}:${local.k8s_external_dns_account_name}"]
-}
-
-resource "helm_release" "external_dns" {
-  name      = "external-dns"
-  namespace = local.k8s_service_account_namespace
-
-  repository = "https://charts.bitnami.com/bitnami"
-  chart      = "external-dns"
-
-  depends_on = [module.iam_assumable_role_external_dns]
-
-  values = [templatefile("conf/external-dns-chart-values.yml", { role_arn = module.iam_assumable_role_external_dns.this_iam_role_arn, svc_acc_name = local.k8s_external_dns_account_name, region = var.region })]
-}
-
-# Fluent bit
-
-resource "aws_iam_policy" "fluent_bit" {
-  name_prefix = "fluent-bit"
-  description = "Fluent Bit policy for cluster ${module.eks.cluster_id}"
-  policy      = file("conf/fluent-bit-policy.json")
-}
-
-module "iam_assumable_role_fluent_bit" {
-  source                        = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
-  version                       = "3.6.0"
-  create_role                   = true
-  role_name                     = "fluent-bit"
-  provider_url                  = replace(module.eks.cluster_oidc_issuer_url, "https://", "")
-  role_policy_arns              = [aws_iam_policy.fluent_bit.arn]
-  oidc_fully_qualified_subjects = ["system:serviceaccount:${local.k8s_service_account_namespace}:${local.k8s_fluentbit_account_name}"]
-}
-
-resource "helm_release" "aws_fluent_bit" {
-  count     = var.create_es ? 1 : 0
-  name      = "aws-for-fluent-bit"
-  namespace = local.k8s_service_account_namespace
-
-  repository = "https://aws.github.io/eks-charts"
-  chart      = "aws-for-fluent-bit"
-
-  depends_on = [module.iam_assumable_role_fluent_bit, aws_elasticsearch_domain.test_w7b6]
-
-  values = [templatefile("conf/fluent-bit-chart-values.yml", { role_arn = module.iam_assumable_role_fluent_bit.this_iam_role_arn, svc_acc_name = local.k8s_fluentbit_account_name, region = var.region, es_url = aws_elasticsearch_domain.test_w7b6[0].endpoint, log_s3_bucket = var.webhook_broker_log_bucket, log_s3_path_prefix = var.webhook_broker_log_path })]
+module "goodies" {
+  source                  = "./modules/kubernetes-goodies/"
+  depends_on              = [module.eks, aws_elasticsearch_domain.test_w7b6]
+  region                  = var.region
+  cluster_oidc_issuer_url = module.eks.cluster_oidc_issuer_url
+  cluster_id              = module.eks.cluster_id
+  log_s3_bucket           = var.webhook_broker_log_bucket
+  log_s3_path_prefix      = var.webhook_broker_log_path
+  connect_es              = var.create_es
+  cluster_name            = local.cluster_name
+  es_url                  = element(concat(aws_elasticsearch_domain.test_w7b6.*.endpoint, list("")), 0)
+  vpc_id                  = module.vpc.vpc_id
 }
 
 # Webhook Broker
@@ -520,7 +286,7 @@ resource "helm_release" "webhook-broker" {
   chart      = "webhook-broker-chart"
   version    = "0.1.0-dev"
 
-  depends_on = [module.rds, kubernetes_namespace.webhook_broker_namespace, helm_release.external_dns]
+  depends_on = [module.rds, kubernetes_namespace.webhook_broker_namespace, module.goodies]
 
   values = [
     templatefile("conf/webhook-broker-values.yml", { https_cert_arn = var.webhook_broker_https_cert_arn, db_url = "${module.rds.this_db_instance_username}:${var.db_password}@tcp(${module.rds.this_db_instance_endpoint})/${module.rds.this_db_instance_name}?charset=utf8&parseTime=true&multiStatements=true", access_log_s3_bucket = var.webhook_broker_access_log_bucket, access_log_s3_path_prefix = var.webhook_broker_access_log_path, subnets = join(", ", module.vpc.private_subnets), hostname = var.webhook_broker_hostname })

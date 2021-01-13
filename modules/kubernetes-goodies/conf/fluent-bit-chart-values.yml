@@ -16,7 +16,7 @@ kinesis:
   enabled: false
 
 elasticsearch:
-  enabled: true
+  enabled: ${connect_es}
   awsRegion: ${region}
   host: ${es_url}
 
@@ -29,3 +29,4 @@ extraOutputs: |
       total_file_size              2M
       s3_key_format                /${log_s3_path_prefix}/$TAG[2]/$TAG[0]/%Y/%m/%d/%H/%M/%S
       s3_key_format_tag_delimiters .-_
+  ${additional_fluentbit_output}
