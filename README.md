@@ -65,6 +65,6 @@ kubectl -n kubernetes-dashboard describe secret $(kubectl -n kubernetes-dashboar
 In creating the stack we made several parts reusable individually -
 
 1. [Client VPN](./modules/client-vpn/README.md)
-1. EKS Cluster
+1. [EKS Cluster](./modules/simple-kubernetes/README.md)
 1. EKS Cluster Goodies
 1. Webhook Broker

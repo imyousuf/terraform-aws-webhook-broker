@@ -154,59 +154,11 @@ CONFIG
 # EKS
 
 module "eks" {
-  source          = "terraform-aws-modules/eks/aws"
-  version         = "13.2.1"
+  source          = "./modules/simple-kubernetes/"
+  region          = var.region
   cluster_name    = local.cluster_name
-  cluster_version = "1.18"
   subnets         = module.vpc.public_subnets
   vpc_id          = module.vpc.vpc_id
-  enable_irsa     = true
-
-  worker_groups = [
-    {
-      name                 = "worker-group-1"
-      asg_desired_capacity = "1"
-      asg_min_size         = "1"
-      asg_max_size         = "3"
-      instance_type        = "c5.large"
-      ami_id               = "ami-0e609024e4dbce4a5"
-      tags = [
-        {
-          "key"                 = "k8s.io/cluster-autoscaler/enabled"
-          "propagate_at_launch" = "false"
-          "value"               = "true"
-        },
-        {
-          "key"                 = "k8s.io/cluster-autoscaler/${local.cluster_name}"
-          "propagate_at_launch" = "false"
-          "value"               = "true"
-        }
-      ]
-    },
-    {
-      name                     = "worker-spot-group-1"
-      asg_desired_capacity     = "2"
-      asg_max_size             = "100"
-      kubelet_extra_args       = "--node-labels=node.kubernetes.io/lifecycle=spot"
-      instance_type            = "c5.large"
-      ami_id                   = "ami-0e609024e4dbce4a5"
-      spot_instance_pools      = 2
-      spot_allocation_strategy = "lowest-price" # Valid options are 'lowest-price' and 'capacity-optimized'. If 'lowest-price', the Auto Scaling group launches instances using the Spot pools with the lowest price, and evenly allocates your instances across the number of Spot pools. If 'capacity-optimized', the Auto Scaling group launches instances using Spot pools that are optimally chosen based on the available Spot capacity.
-      spot_price               = "0.068"
-      tags = [
-        {
-          "key"                 = "k8s.io/cluster-autoscaler/enabled"
-          "propagate_at_launch" = "false"
-          "value"               = "true"
-        },
-        {
-          "key"                 = "k8s.io/cluster-autoscaler/${local.cluster_name}"
-          "propagate_at_launch" = "false"
-          "value"               = "true"
-        }
-      ]
-    }
-  ]
 }
 
 # Kubernetes and Helm Setup
@@ -559,7 +511,6 @@ resource "kubernetes_namespace" "webhook_broker_namespace" {
     name = local.k8s_w7b6_namespace
   }
 }
-
 
 resource "helm_release" "webhook-broker" {
   name      = "webhook-broker"
