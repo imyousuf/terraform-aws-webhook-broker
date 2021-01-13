@@ -153,9 +153,6 @@ CONFIG
 
 # EKS
 
-data "aws_availability_zones" "available" {
-}
-
 module "eks" {
   source          = "terraform-aws-modules/eks/aws"
   version         = "13.2.1"
