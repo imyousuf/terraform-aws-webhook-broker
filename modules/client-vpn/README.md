@@ -1,6 +1,6 @@
 # client-vpn
 
-This is a Terraform module used to create a AWS Client VPN connection with a VPC with full internet and VPC private network access.
+This is a Terraform module used to create a AWS Client VPN connection with a VPC with full internet and VPC private network access. This module depends on proper AWS CLI setup and `python3` executable in `PATH`.
 
 ## Usage
 

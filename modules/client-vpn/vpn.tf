@@ -98,7 +98,7 @@ resource "aws_ec2_client_vpn_route" "internet_traffic_route" {
 
 data "external" "client_config" {
   depends_on = [aws_ec2_client_vpn_endpoint.vpn]
-  program    = ["python", "${path.module}/vpn_config_file.py", aws_ec2_client_vpn_endpoint.vpn.id]
+  program    = ["python3", "${path.module}/vpn_config_file.py", aws_ec2_client_vpn_endpoint.vpn.id]
 }
 
 resource "local_file" "ovpn_file" {

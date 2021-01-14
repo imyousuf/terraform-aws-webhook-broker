@@ -25,6 +25,7 @@
 terraform.tfstate*
 .terraform*
 kubeconfig*
+*.ovpn
 
 # terraform customization tfvars
 custom_vars.auto.tfvars
