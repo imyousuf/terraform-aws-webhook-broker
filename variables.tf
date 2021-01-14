@@ -28,6 +28,11 @@ variable "create_es" {
   description = "Whether to skip creating Elasticsearch"
 }
 
+variable "create_w7b6" {
+  default     = true
+  description = "Whether to skip creating Webhook Broker stack"
+}
+
 variable "db_password" {
   default     = "zxc90zxc"
   description = "RDS MySQL password for user `webhook_broker`"

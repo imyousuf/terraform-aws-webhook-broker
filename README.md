@@ -66,5 +66,5 @@ In creating the stack we made several parts reusable individually -
 
 1. [Client VPN](./modules/client-vpn/README.md)
 1. [EKS Cluster](./modules/simple-kubernetes/README.md)
-1. EKS Cluster Goodies
-1. Webhook Broker
+1. [EKS Cluster Goodies](./modules/kubernetes-goodies/README.md)
+1. [Webhook Broker](./modules/w7b6/README.md)

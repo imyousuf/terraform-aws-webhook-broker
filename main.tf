@@ -194,101 +194,18 @@ module "goodies" {
 
 # Webhook Broker
 
-# RDS
+module "webhook_broker" {
+  source     = "./modules/w7b6/"
+  depends_on = [module.goodies]
 
-module "sg_mysql" {
-  source  = "terraform-aws-modules/security-group/aws//modules/mysql"
-  version = "3.17.0"
-  name    = "security-group-mysql-${module.vpc.vpc_id}"
-  vpc_id  = module.vpc.vpc_id
-
-  create = var.create_rds
-
-  ingress_cidr_blocks = [
-    local.vpc_cidr_block, local.vpn_cidr_block
-  ]
-}
-
-module "rds" {
-  source  = "terraform-aws-modules/rds/aws"
-  version = "2.20.0"
-
-  create_db_instance = var.create_rds
-
-  identifier        = "w7b6"
-  engine            = "mysql"
-  engine_version    = "8.0.21"
-  instance_class    = "db.r5.large"
-  allocated_storage = 5
-  storage_encrypted = false
-
-  name     = "webhook_broker"
-  username = "webhook_broker"
-  password = var.db_password
-  port     = "3306"
-
-  vpc_security_group_ids = [module.vpc.default_security_group_id, module.sg_mysql.this_security_group_id]
-
-  maintenance_window = "Sun:00:00-Sun:03:00"
-  backup_window      = "04:00-07:00"
-
-  multi_az = true
-
-  # disable backups to create DB faster
-  backup_retention_period = 10
-
-  tags = {
-    Owner       = "user"
-    Environment = "dev"
-  }
-
-  enabled_cloudwatch_logs_exports = ["error", "slowquery"]
-
-  # DB subnet group
-  subnet_ids = module.vpc.database_subnets
-
-  # DB parameter group
-  family = "mysql8.0"
-
-  # DB option group
-  major_engine_version = "8.0"
-
-  # Snapshot name upon DB deletion
-  final_snapshot_identifier = "w7b6snap"
-
-  # Database Deletion Protection
-  deletion_protection = false
-
-  parameters = [
-    {
-      name  = "character_set_client"
-      value = "utf8"
-    },
-    {
-      name  = "character_set_server"
-      value = "utf8"
-    }
-  ]
-
-}
-
-resource "kubernetes_namespace" "webhook_broker_namespace" {
-  metadata {
-    name = local.k8s_w7b6_namespace
-  }
-}
-
-resource "helm_release" "webhook-broker" {
-  name      = "webhook-broker"
-  namespace = local.k8s_w7b6_namespace
-
-  repository = "https://helm.imytech.net/"
-  chart      = "webhook-broker-chart"
-  version    = "0.1.0-dev"
-
-  depends_on = [module.rds, kubernetes_namespace.webhook_broker_namespace, module.goodies]
-
-  values = [
-    templatefile("conf/webhook-broker-values.yml", { https_cert_arn = var.webhook_broker_https_cert_arn, db_url = "${module.rds.this_db_instance_username}:${var.db_password}@tcp(${module.rds.this_db_instance_endpoint})/${module.rds.this_db_instance_name}?charset=utf8&parseTime=true&multiStatements=true", access_log_s3_bucket = var.webhook_broker_access_log_bucket, access_log_s3_path_prefix = var.webhook_broker_access_log_path, subnets = join(", ", module.vpc.private_subnets), hostname = var.webhook_broker_hostname })
-  ]
+  subnets                          = module.vpc.database_subnets
+  vpc_id                           = module.vpc.vpc_id
+  create                           = var.create_w7b6
+  default_security_group_id        = module.vpc.default_security_group_id
+  sg_cidr_blocks                   = [local.vpc_cidr_block, local.vpn_cidr_block]
+  webhook_broker_https_cert_arn    = var.webhook_broker_https_cert_arn
+  webhook_broker_access_log_bucket = var.webhook_broker_access_log_bucket
+  webhook_broker_access_log_path   = var.webhook_broker_access_log_path
+  lb_subnets                       = module.vpc.private_subnets
+  webhook_broker_hostname          = var.webhook_broker_hostname
 }
