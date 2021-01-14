@@ -1,7 +1,3 @@
-provider "aws" {
-  region = var.region
-}
-
 resource "aws_security_group" "vpn_access" {
   name   = "shared-vpn-access"
   vpc_id = var.vpc_id

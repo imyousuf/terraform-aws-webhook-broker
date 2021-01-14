@@ -68,3 +68,14 @@ In creating the stack we made several parts reusable individually -
 1. [EKS Cluster](./modules/simple-kubernetes/README.md)
 1. [EKS Cluster Goodies](./modules/kubernetes-goodies/README.md)
 1. [Webhook Broker](./modules/w7b6/README.md)
+
+## Production Note
+
+For production use - I would not recommend using the root module for managing a production environment. My recommendation would be to separate it into 3 TF workspaces -
+
+1. VPN and Network - so that various application can be launched in it
+1. Log aggregation infrastructure - Since it will be used by k8s and non-k8s services alike
+1. Kubernetes Cluster and Goodies - so that multiple applications can be deployed
+1. Webhook Broker(s) - if you have multiple brokers they can be managed through a single workspace.
+
+Also when destroying the entire stack, you might end up with EKS being destroyed, but erroring out on goodies in deleted; that can be deleted and just delete the `terraform.tfstate` once you have run `terraform destroy` enough time until only the helm charts are left.

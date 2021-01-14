@@ -60,8 +60,8 @@ module "vpc" {
 }
 
 module "client_vpn" {
-  source = "./modules/client-vpn/"
-
+  source              = "./modules/client-vpn/"
+  depends_on          = [module.vpc]
   vpc_id              = module.vpc.vpc_id
   vpn_cidr            = local.vpn_cidr_block
   private_subnets     = [module.vpc.private_subnets[0], module.vpc.private_subnets[1]]
@@ -74,6 +74,7 @@ module "client_vpn" {
 
 module "simple_es" {
   source         = "./modules/simple-log-es/"
+  depends_on     = [module.vpc]
   region         = var.region
   create_es      = var.create_es
   vpc_id         = module.vpc.vpc_id
@@ -85,6 +86,7 @@ module "simple_es" {
 
 module "eks" {
   source       = "./modules/simple-kubernetes/"
+  depends_on   = [module.vpc]
   region       = var.region
   cluster_name = local.cluster_name
   subnets      = module.vpc.public_subnets
@@ -115,6 +117,8 @@ provider "helm" {
     token                  = data.aws_eks_cluster_auth.cluster.token
   }
 }
+
+# Useful Kubernetes Services
 
 module "goodies" {
   source                  = "./modules/kubernetes-goodies/"

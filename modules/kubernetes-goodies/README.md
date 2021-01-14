@@ -7,7 +7,7 @@ This module installs some key services and sidecars to an EKS Cluster. Most key 
 1. Kubernetes Dashboard with Metrics Scrapper - [here](https://learn.hashicorp.com/tutorials/terraform/eks) and [here](https://artifacthub.io/packages/helm/k8s-dashboard/kubernetes-dashboard)
 1. `metrics-server` to make Horizontal Pod Autoscaling (HPA) to work - [here](https://github.com/helm/charts/tree/master/stable/metrics-server), this Chart is deprecated, need to move once official Chart is [released](https://github.com/kubernetes-sigs/metrics-server/issues/572).
 1. `external-dns` for assigning Route53 DNS to Ingress services. - [here](https://github.com/bitnami/charts/tree/master/bitnami/external-dns)
-1. AWS ALB Ingress Controller - [here](https://github.com/aws/eks-charts/tree/master/stable/aws-load-balancer-controller)
+1. AWS ALB Ingress Controller - [here](https://github.com/aws/eks-charts/tree/master/stable/aws-load-balancer-controller), more documentation [here](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.1/) as well.
 1. AWS for Fluent Bit - [here](https://github.com/aws/eks-charts/tree/master/stable/aws-for-fluent-bit)
 
 Some useful tips to configure the module -
