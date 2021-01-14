@@ -26,7 +26,7 @@ extraOutputs: |
       Match                        *
       bucket                       ${log_s3_bucket}
       region                       ${region}
-      total_file_size              2M
+      total_file_size              20M
       s3_key_format                /${log_s3_path_prefix}/$TAG[2]/$TAG[0]/%Y/%m/%d/%H/%M/%S
       s3_key_format_tag_delimiters .-_
   ${additional_fluentbit_output}
