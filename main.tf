@@ -3,11 +3,9 @@ provider "aws" {
 }
 
 locals {
-  cluster_name       = "test-eks-w7b6"
-  es_domain          = "test-es-w7b6"
-  vpc_cidr_block     = "20.10.0.0/16"
-  vpn_cidr_block     = "17.10.0.0/16"
-  k8s_w7b6_namespace = "webhook-broker"
+  cluster_name   = "test-eks-w7b6"
+  vpc_cidr_block = "20.10.0.0/16"
+  vpn_cidr_block = "17.10.0.0/16"
 }
 
 # VPC and Client VPN
@@ -74,73 +72,13 @@ module "client_vpn" {
 
 # Elasticsearch for log ingestion
 
-resource "aws_security_group" "es" {
-  count       = var.create_es ? 1 : 0
-  name        = "elasticsearch-${local.es_domain}"
-  description = "Managed by Terraform"
-  vpc_id      = module.vpc.vpc_id
-
-  ingress {
-    from_port = 443
-    to_port   = 443
-    protocol  = "tcp"
-
-    cidr_blocks = [
-      local.vpc_cidr_block, local.vpn_cidr_block
-    ]
-  }
-}
-
-resource "aws_iam_service_linked_role" "es" {
-  count            = var.create_es ? 1 : 0
-  aws_service_name = "es.amazonaws.com"
-}
-
-data "aws_caller_identity" "current" {}
-
-resource "aws_elasticsearch_domain" "test_w7b6" {
-  count                 = var.create_es ? 1 : 0
-  domain_name           = local.es_domain
-  elasticsearch_version = "7.9"
-  cluster_config {
-    instance_type          = "t2.medium.elasticsearch"
-    instance_count         = 3
-    zone_awareness_enabled = true
-    zone_awareness_config {
-      availability_zone_count = 3
-    }
-  }
-  ebs_options {
-    ebs_enabled = true
-    volume_size = 35
-  }
-  vpc_options {
-    subnet_ids         = module.vpc.private_subnets
-    security_group_ids = [aws_security_group.es[0].id]
-  }
-  domain_endpoint_options {
-    enforce_https       = false
-    tls_security_policy = "Policy-Min-TLS-1-2-2019-07"
-  }
-
-  access_policies = <<CONFIG
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Action": "es:*",
-            "Principal": "*",
-            "Effect": "Allow",
-            "Resource": "arn:aws:es:${var.region}:${data.aws_caller_identity.current.account_id}:domain/${local.es_domain}/*"
-        }
-    ]
-}
-CONFIG
-
-  tags = {
-    Domain = "test-w7b6"
-  }
-  depends_on = [aws_iam_service_linked_role.es]
+module "simple_es" {
+  source         = "./modules/simple-log-es/"
+  region         = var.region
+  create_es      = var.create_es
+  vpc_id         = module.vpc.vpc_id
+  sg_cidr_blocks = [local.vpc_cidr_block, local.vpn_cidr_block]
+  subnets        = module.vpc.private_subnets
 }
 
 # EKS
@@ -180,7 +118,7 @@ provider "helm" {
 
 module "goodies" {
   source                  = "./modules/kubernetes-goodies/"
-  depends_on              = [module.eks, aws_elasticsearch_domain.test_w7b6]
+  depends_on              = [module.eks, module.simple_es]
   region                  = var.region
   cluster_oidc_issuer_url = module.eks.cluster_oidc_issuer_url
   cluster_id              = module.eks.cluster_id
@@ -188,7 +126,7 @@ module "goodies" {
   log_s3_path_prefix      = var.webhook_broker_log_path
   connect_es              = var.create_es
   cluster_name            = local.cluster_name
-  es_url                  = element(concat(aws_elasticsearch_domain.test_w7b6.*.endpoint, list("")), 0)
+  es_url                  = module.simple_es.es_endpoint
   vpc_id                  = module.vpc.vpc_id
 }
 

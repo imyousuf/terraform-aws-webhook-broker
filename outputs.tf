@@ -34,12 +34,12 @@ output "vpn_id" {
 
 # Elasticsearch
 output "es_endpoint" {
-  value       = element(concat(aws_elasticsearch_domain.test_w7b6.*.endpoint, list("")), 0)
+  value       = module.simple_es.es_endpoint
   description = "Elasticsearch API Endpoint"
 }
 
 output "es_kibana" {
-  value       = element(concat(aws_elasticsearch_domain.test_w7b6.*.kibana_endpoint, list("")), 0)
+  value       = module.simple_es.es_kibana
   description = "Elasticsearch Kibana URL"
 }
 
