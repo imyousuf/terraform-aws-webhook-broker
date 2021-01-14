@@ -42,3 +42,8 @@ variable "cluster_name" {
   default     = "test-w7b6"
   description = "AWS Region"
 }
+
+variable "k8s_dashboard_chart_values" {
+  default     = []
+  description = "Allow K8S Dashboard Chart to be configured from outside the module to add more configuration, e.g. Ingress annotation"
+}

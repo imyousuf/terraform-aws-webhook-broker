@@ -129,6 +129,15 @@ resource "helm_release" "kubernetes-dashboard" {
     name  = "serviceAccount.name"
     value = local.k8s_dashboard_service_account_name
   }
+  set {
+    name  = "ingress.enabled"
+    value = true
+  }
+  set {
+    name  = "metricsScraper.enabled"
+    value = true
+  }
+  values = var.k8s_dashboard_chart_values
 }
 
 # Metrics Server required for HPA
