@@ -28,7 +28,7 @@ output "database_subnets" {
 
 # VPN
 output "vpn_id" {
-  value       = module.client_vpn.vpn_id
+  value       = element(concat(module.client_vpn.*.vpn_id, list("")), 0)
   description = "Client VPN AWS ID"
 }
 

@@ -23,6 +23,11 @@ variable "create_rds" {
   description = "Whether to skip creating RDS"
 }
 
+variable "create_client_vpn" {
+  default     = true
+  description = "Whether to skip creating Client VPN"
+}
+
 variable "create_es" {
   default     = true
   description = "Whether to skip creating Elasticsearch"

@@ -62,6 +62,7 @@ module "vpc" {
 
 module "client_vpn" {
   source              = "./modules/client-vpn/"
+  count               = var.create_client_vpn ? 1 : 0
   depends_on          = [module.vpc]
   vpc_id              = module.vpc.vpc_id
   vpn_cidr            = local.vpn_cidr_block
@@ -112,22 +113,17 @@ data "aws_eks_cluster" "cluster" {
   name = module.eks.cluster_id
 }
 
-data "aws_eks_cluster_auth" "cluster" {
-  name = module.eks.cluster_id
-}
-
 provider "kubernetes" {
   host                   = data.aws_eks_cluster.cluster.endpoint
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
-  token                  = data.aws_eks_cluster_auth.cluster.token
-  load_config_file       = false
+  config_path            = "kubeconfig_${local.cluster_name}"
 }
 
 provider "helm" {
   kubernetes {
     host                   = data.aws_eks_cluster.cluster.endpoint
     cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
-    token                  = data.aws_eks_cluster_auth.cluster.token
+    config_path            = "kubeconfig_${local.cluster_name}"
   }
 }
 
