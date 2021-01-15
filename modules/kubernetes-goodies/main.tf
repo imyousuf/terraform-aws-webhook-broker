@@ -109,42 +109,11 @@ resource "helm_release" "cluster-autoscaler" {
   ]
 }
 
-# Kubernetes Dashboard
-
-resource "kubernetes_namespace" "k8s-dashboard-namespace" {
-  metadata {
-    name = local.k8s_dashboard_namespace
-  }
-}
-
-resource "helm_release" "kubernetes-dashboard" {
-  name      = "kubernetes-dashboard"
-  namespace = local.k8s_dashboard_namespace
-
-  repository = "https://kubernetes.github.io/dashboard/"
-  chart      = "kubernetes-dashboard"
-  depends_on = [kubernetes_namespace.k8s-dashboard-namespace]
-
-  set {
-    name  = "serviceAccount.name"
-    value = local.k8s_dashboard_service_account_name
-  }
-  set {
-    name  = "ingress.enabled"
-    value = true
-  }
-  set {
-    name  = "metricsScraper.enabled"
-    value = true
-  }
-  values = var.k8s_dashboard_chart_values
-}
-
 # Metrics Server required for HPA
 
 # TODO: This chart has been deprecated, we will need to move to the new chart once official
 # https://github.com/kubernetes-sigs/metrics-server/issues/572
-resource "helm_release" "metrics-server" {
+resource "helm_release" "metrics_server" {
   name      = "metrics-server"
   namespace = local.k8s_service_account_namespace
 
@@ -183,7 +152,7 @@ module "iam_assumable_role_ingress" {
   oidc_fully_qualified_subjects = ["system:serviceaccount:${local.k8s_service_account_namespace}:${local.k8s_alb_service_account_name}"]
 }
 
-resource "helm_release" "alb-ingress-controller" {
+resource "helm_release" "alb_ingress_controller" {
   name      = "aws-load-balancer-controller"
   namespace = local.k8s_service_account_namespace
 
@@ -222,7 +191,38 @@ resource "helm_release" "external_dns" {
 
   depends_on = [module.iam_assumable_role_external_dns]
 
-  values = [templatefile("${path.module}/conf/external-dns-chart-values.yml", { role_arn = module.iam_assumable_role_external_dns.this_iam_role_arn, svc_acc_name = local.k8s_external_dns_account_name, region = var.region })]
+  values = [templatefile("${path.module}/conf/external-dns-chart-values.yml", { role_arn = module.iam_assumable_role_external_dns.this_iam_role_arn, svc_acc_name = local.k8s_external_dns_account_name, region = var.region, policy = var.external_dns_r53_sync ? "sync" : "upsert-only" })]
+}
+
+# Kubernetes Dashboard
+
+resource "kubernetes_namespace" "k8s-dashboard-namespace" {
+  metadata {
+    name = local.k8s_dashboard_namespace
+  }
+}
+
+resource "helm_release" "kubernetes-dashboard" {
+  name      = "kubernetes-dashboard"
+  namespace = local.k8s_dashboard_namespace
+
+  repository = "https://kubernetes.github.io/dashboard/"
+  chart      = "kubernetes-dashboard"
+  depends_on = [kubernetes_namespace.k8s-dashboard-namespace, helm_release.external_dns, helm_release.alb_ingress_controller, helm_release.metrics_server]
+
+  set {
+    name  = "serviceAccount.name"
+    value = local.k8s_dashboard_service_account_name
+  }
+  set {
+    name  = "ingress.enabled"
+    value = true
+  }
+  set {
+    name  = "metricsScraper.enabled"
+    value = true
+  }
+  values = var.k8s_dashboard_chart_values
 }
 
 # Fluent bit

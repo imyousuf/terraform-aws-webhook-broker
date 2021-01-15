@@ -47,3 +47,8 @@ variable "k8s_dashboard_chart_values" {
   default     = []
   description = "Allow K8S Dashboard Chart to be configured from outside the module to add more configuration, e.g. Ingress annotation"
 }
+
+variable "external_dns_r53_sync" {
+  default     = true
+  description = "Whether to sync or upsert-only Route 53 DNS records; by default it will be in sync mode"
+}
