@@ -6,6 +6,7 @@ locals {
   cluster_name   = "test-eks-w7b6"
   vpc_cidr_block = "20.10.0.0/16"
   vpn_cidr_block = "17.10.0.0/16"
+  db_password    = "zxc90zxc"
 }
 
 # VPC and Client VPN
@@ -93,6 +94,18 @@ module "eks" {
   vpc_id       = module.vpc.vpc_id
 }
 
+# RDS
+
+module "webhook_broker_db" {
+  source                    = "./modules/w7b6-mysql/"
+  subnets                   = module.vpc.database_subnets
+  vpc_id                    = module.vpc.vpc_id
+  create                    = var.create_w7b6
+  default_security_group_id = module.vpc.default_security_group_id
+  sg_cidr_blocks            = [local.vpc_cidr_block, local.vpn_cidr_block]
+  db_password               = local.db_password
+}
+
 # Kubernetes and Helm Setup
 
 data "aws_eks_cluster" "cluster" {
@@ -137,12 +150,13 @@ module "goodies" {
 # Webhook Broker
 
 module "webhook_broker" {
-  source     = "./modules/w7b6/"
-  depends_on = [module.goodies]
-
+  source                           = "./modules/w7b6/"
+  depends_on                       = [module.goodies, module.webhook_broker_db]
   subnets                          = module.vpc.database_subnets
   vpc_id                           = module.vpc.vpc_id
+  db_password                      = local.db_password
   create                           = var.create_w7b6
+  create_rds                       = false
   default_security_group_id        = module.vpc.default_security_group_id
   sg_cidr_blocks                   = [local.vpc_cidr_block, local.vpn_cidr_block]
   webhook_broker_https_cert_arn    = var.webhook_broker_https_cert_arn
@@ -150,4 +164,5 @@ module "webhook_broker" {
   webhook_broker_access_log_path   = var.webhook_broker_access_log_path
   lb_subnets                       = module.vpc.private_subnets
   webhook_broker_hostname          = var.webhook_broker_hostname
+  db_url_override                  = "${module.webhook_broker_db.this_db_instance_username}:${local.db_password}@tcp(${module.webhook_broker_db.this_db_instance_endpoint})/${module.webhook_broker_db.this_db_instance_name}?charset=utf8&parseTime=true&multiStatements=true"
 }

@@ -69,3 +69,13 @@ variable "override_webhook_broker_chart_config" {
   default     = []
   description = "Custom Webhook Broker Chart configuration which will override the default chart config"
 }
+
+variable "create_rds" {
+  default     = true
+  description = "Whether to create RDS and its applicable only `create` is true. Also if this is false but `create` is true, code will use `db_url_override` instead"
+}
+
+variable "db_url_override" {
+  default     = ""
+  description = "Custom Webhook Broker Chart configuration which will override the default chart config"
+}
