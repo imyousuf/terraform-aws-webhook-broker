@@ -78,4 +78,4 @@ For production use - I would not recommend using the root module for managing a 
 1. Kubernetes Cluster and Goodies - so that multiple applications can be deployed
 1. Webhook Broker(s) - if you have multiple brokers they can be managed through a single workspace.
 
-Also when destroying the entire stack, you might end up with EKS being destroyed, but erroring out on goodies in deleted; that can be deleted and just delete the `terraform.tfstate` once you have run `terraform destroy` enough time until only the helm charts are left.
+Also when destroying the entire stack, you might end up with EKS being destroyed, but erroring out on goodies in deleted; that can be deleted and just delete the `terraform.tfstate` once you have run `terraform destroy` enough time until only the helm charts are left. Use `destroy-stack.sh` to progressively destruction of the stack without hiccups.
