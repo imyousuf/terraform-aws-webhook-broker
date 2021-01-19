@@ -63,7 +63,6 @@ module "vpc" {
 module "client_vpn" {
   source              = "./modules/client-vpn/"
   count               = var.create_client_vpn ? 1 : 0
-  depends_on          = [module.vpc]
   vpc_id              = module.vpc.vpc_id
   vpn_cidr            = local.vpn_cidr_block
   private_subnets     = [module.vpc.private_subnets[0], module.vpc.private_subnets[1]]
@@ -76,7 +75,6 @@ module "client_vpn" {
 
 module "simple_es" {
   source         = "./modules/simple-log-es/"
-  depends_on     = [module.vpc]
   region         = var.region
   create_es      = var.create_es
   vpc_id         = module.vpc.vpc_id
@@ -88,7 +86,6 @@ module "simple_es" {
 
 module "eks" {
   source       = "./modules/simple-kubernetes/"
-  depends_on   = [module.vpc]
   region       = var.region
   cluster_name = local.cluster_name
   subnets      = module.vpc.public_subnets
@@ -131,7 +128,6 @@ provider "helm" {
 
 module "goodies" {
   source                  = "./modules/kubernetes-goodies/"
-  depends_on              = [module.eks, module.simple_es]
   region                  = var.region
   cluster_oidc_issuer_url = module.eks.cluster_oidc_issuer_url
   cluster_id              = module.eks.cluster_id
@@ -147,7 +143,7 @@ module "goodies" {
 
 module "webhook_broker" {
   source                           = "./modules/w7b6/"
-  depends_on                       = [module.goodies, module.webhook_broker_db]
+  depends_on                       = [module.goodies]
   subnets                          = module.vpc.database_subnets
   vpc_id                           = module.vpc.vpc_id
   db_password                      = local.db_password
