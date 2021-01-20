@@ -29,14 +29,14 @@ All the services installed in EKS are done through [Helm Charts](https://helm.sh
 
 ## Usage
 
-Firstly start by making sure AWS CLI is installed and configured properly. Then please make sure to create a `custom_vars.auto.tfvars` file with the following variables to use Client VPN [module](./modules/client-vpn/README.md).
+Firstly start by making sure AWS CLI is installed and configured properly. Then please make sure to create a `custom_vars.auto.tfvars` file with the following variables to use Client VPN [module](https://github.com/imyousuf/terraform-aws-webhook-broker/blob/main/modules/client-vpn/README.md).
 
 ```terraform
 vpn_server_cert_arn = "arn:aws:acm:<REGION>:<ACCOUNT_ID>:certificate/<CERT_ARN_FOR_SERVER>"
 vpn_client_cert_arn = "arn:aws:acm:<REGION>:<ACCOUNT_ID>:certificate/<CERT_ARN_FOR_CLIENT>"
 ```
 
-Once you apply the config, it will generate a `config.ovpn` file for connecting to VPN; make sure to edit it as per Client VPN [README](./modules/client-vpn/README.md).
+Once you apply the config, it will generate a `config.ovpn` file for connecting to VPN; make sure to edit it as per Client VPN [README](https://github.com/imyousuf/terraform-aws-webhook-broker/blob/main/modules/client-vpn/README.md).
 
 Also set the following variables -
 
@@ -48,8 +48,6 @@ webhook_broker_hostname          = "match-hostname-to-certificate"
 webhook_broker_log_bucket        = "cluster-log-bucket"
 webhook_broker_log_path          = "cluster/path/prefix"
 ```
-
-One thing to note is, when `terraform destroy` is called, it will not delete the ALB or the Route53 records; so please delete them manually for the time being.
 
 The `kubernetes-dashboard` ingress controller is disabled by default as we are deploying the cluster in public subnet; please consider enabling it when deploying in a private subnet by passing [Helm Chart values](https://artifacthub.io/packages/helm/k8s-dashboard/kubernetes-dashboard).
 
@@ -64,10 +62,10 @@ kubectl -n kubernetes-dashboard describe secret $(kubectl -n kubernetes-dashboar
 
 In creating the stack we made several parts reusable individually -
 
-1. [Client VPN](./modules/client-vpn/README.md)
-1. [EKS Cluster](./modules/simple-kubernetes/README.md)
-1. [EKS Cluster Goodies](./modules/kubernetes-goodies/README.md)
-1. [Webhook Broker](./modules/w7b6/README.md)
+1. [Client VPN](https://github.com/imyousuf/terraform-aws-webhook-broker/blob/main/modules/client-vpn/README.md)
+1. [EKS Cluster](https://github.com/imyousuf/terraform-aws-webhook-broker/blob/main/modules/simple-kubernetes/README.md)
+1. [EKS Cluster Goodies](https://github.com/imyousuf/terraform-aws-webhook-broker/blob/main/modules/kubernetes-goodies/README.md)
+1. [Webhook Broker](https://github.com/imyousuf/terraform-aws-webhook-broker/blob/main/modules/w7b6/README.md)
 
 ## Production Note
 
@@ -78,4 +76,8 @@ For production use - I would not recommend using the root module for managing a 
 1. Kubernetes Cluster and Goodies - so that multiple applications can be deployed
 1. Webhook Broker(s) - if you have multiple brokers they can be managed through a single workspace.
 
-Also when destroying the entire stack, you might end up with EKS being destroyed, but erroring out on goodies in deleted; that can be deleted and just delete the `terraform.tfstate` once you have run `terraform destroy` enough time until only the helm charts are left. Use `destroy-stack.sh` to progressively destruction of the stack without hiccups.
+## Known Issues
+
+Also when destroying the entire stack, you might end up with EKS being destroyed, but erroring out on goodies in deleted; that can be deleted and just delete the `terraform.tfstate` once you have run `terraform destroy` enough time until only the helm charts are left. Please use `destroy-stack.sh` to progressively destroy of the stack without any hiccups.
+
+One other thing to note is, when `terraform destroy` is called, it will delete the ALB and the Route53 records, but not instantly and it happens asynchronously; so please delete them manually in case the `goodies` module gets removed before they are deleted.
