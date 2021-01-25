@@ -79,3 +79,8 @@ variable "db_url_override" {
   default     = ""
   description = "Custom Webhook Broker Chart configuration which will override the default chart config"
 }
+
+variable "w7b6_chart_version" {
+  default     = "0.1.0-beta-1"
+  description = "Custom Webhook Broker Chart configuration which will override the default chart config"
+}

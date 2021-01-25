@@ -29,7 +29,7 @@ resource "helm_release" "webhook-broker" {
 
   repository = "https://helm.imytech.net/"
   chart      = "webhook-broker-chart"
-  version    = "0.1.0-dev"
+  version    = var.w7b6_chart_version
 
   depends_on = [module.mysql, kubernetes_namespace.webhook_broker_namespace]
 
