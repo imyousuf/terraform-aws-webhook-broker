@@ -3,6 +3,23 @@ variable "db_password" {
   description = "RDS MySQL password for user `webhook_broker`"
 }
 
+variable "identifier" {
+  description = "The identifier of the webhook broker"
+}
+variable "db_username" {
+  description = "Username of DB"
+}
+variable "db_name" {
+  description = "Name of the database"
+}
+variable "final_snapshot_identifier" {
+  description = "Name of final snapshot"
+}
+
+variable "tags" {
+  description = "Tags to add to db"
+}
+
 variable "subnets" {
   description = "Subnets to create the Kubernetes cluster in"
 }

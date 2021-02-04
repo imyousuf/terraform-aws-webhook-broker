@@ -82,8 +82,8 @@ resource "kubernetes_cluster_role_binding" "cluster-admin-binding" {
   }
   subject {
     kind      = "ServiceAccount"
-    name      = local.k8s_dashboard_service_account_name
-    namespace = local.k8s_dashboard_namespace
+    name      = local.k8s_dashboard_namespace
+    namespace = local.k8s_service_account_namespace
   }
 }
 
@@ -105,7 +105,7 @@ resource "helm_release" "cluster-autoscaler" {
   depends_on = [module.iam_assumable_role_admin]
 
   values = [
-    templatefile("${path.module}/conf/cluster-autoscaler-chart-values.yml", { role_arn = module.iam_assumable_role_admin.this_iam_role_arn })
+    templatefile("${path.module}/conf/cluster-autoscaler-chart-values.yml", { role_arn = module.iam_assumable_role_admin.this_iam_role_arn, cluster_name = var.cluster_name })
   ]
 }
 

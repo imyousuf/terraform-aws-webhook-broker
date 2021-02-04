@@ -17,15 +17,15 @@ module "rds" {
 
   create_db_instance = var.create
 
-  identifier        = "w7b6"
+  identifier        = var.identifier
   engine            = "mysql"
   engine_version    = "8.0.21"
   instance_class    = var.db_instance_class
   allocated_storage = 5
   storage_encrypted = false
 
-  name     = "webhook_broker"
-  username = "webhook_broker"
+  name     = var.db_name
+  username = var.db_username
   password = var.db_password
   port     = "3306"
 
@@ -39,10 +39,7 @@ module "rds" {
   # disable backups to create DB faster
   backup_retention_period = 10
 
-  tags = {
-    Owner       = "user"
-    Environment = "dev"
-  }
+  tags = var.tags
 
   enabled_cloudwatch_logs_exports = ["error", "slowquery"]
 
@@ -56,7 +53,7 @@ module "rds" {
   major_engine_version = "8.0"
 
   # Snapshot name upon DB deletion
-  final_snapshot_identifier = "w7b6snap"
+  final_snapshot_identifier = var.final_snapshot_identifier
 
   # Database Deletion Protection
   deletion_protection = false

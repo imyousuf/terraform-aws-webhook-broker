@@ -11,5 +11,5 @@ rbac:
       eks.amazonaws.com/role-arn: ${role_arn}
 
 autoDiscovery:
-  clusterName: test-eks-w7b6
+  clusterName: ${cluster_name}
   enabled: true

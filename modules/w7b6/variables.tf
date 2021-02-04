@@ -2,6 +2,10 @@ variable "db_password" {
   default     = "zxc90zxc"
   description = "RDS MySQL password for user `webhook_broker`"
 }
+variable "db_username" {
+  default     = "webhook_broker"
+  description = "RDS MySQL username for user"
+}
 
 variable "subnets" {
   description = "Subnets to create the Kubernetes cluster in"

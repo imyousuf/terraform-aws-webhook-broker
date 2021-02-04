@@ -7,6 +7,7 @@ locals {
   vpc_cidr_block = "20.10.0.0/16"
   vpn_cidr_block = "17.10.0.0/16"
   db_password    = "zxc90zxc"
+  db_username    = "webhook_broker"
 }
 
 # VPC and Client VPN
@@ -80,16 +81,35 @@ module "simple_es" {
   vpc_id         = module.vpc.vpc_id
   sg_cidr_blocks = [local.vpc_cidr_block, local.vpn_cidr_block]
   subnets        = module.vpc.private_subnets
+  tags = {
+    Domain = "test-w7b6"
+  }
 }
 
 # EKS
 
 module "eks" {
-  source       = "./modules/simple-kubernetes/"
-  region       = var.region
-  cluster_name = local.cluster_name
-  subnets      = module.vpc.public_subnets
-  vpc_id       = module.vpc.vpc_id
+  source                          = "./modules/simple-kubernetes/"
+  region                          = var.region
+  cluster_name                    = local.cluster_name
+  subnets                         = module.vpc.public_subnets
+  vpc_id                          = module.vpc.vpc_id
+  cluster_endpoint_private_access = false
+  cluster_endpoint_public_access  = true
+  map_users = [
+    {
+      userarn  = "arn:aws:iam::<ACCOUNT_NUMBER>:user/<USER_NAME>"
+      username = "<USER_NAME>"
+      groups   = ["system:masters"]
+    }
+  ]
+  map_roles = [
+    {
+      rolearn  = "arn:aws:iam::<ACCOUNT_NUMBER>:role/<ROLE_NAME>"
+      username = "<ROLE_NAME>"
+      groups   = ["system:masters"]
+    },
+  ]
 }
 
 # RDS
@@ -101,7 +121,15 @@ module "webhook_broker_db" {
   create                    = var.create_w7b6
   default_security_group_id = module.vpc.default_security_group_id
   sg_cidr_blocks            = [local.vpc_cidr_block, local.vpn_cidr_block]
+  identifier                = "w7b6"
+  final_snapshot_identifier = "w7b6snap"
+  db_name                   = "webhook_broker"
+  db_username               = local.db_username
   db_password               = local.db_password
+  tags = {
+    Owner       = "user"
+    Environment = "dev"
+  }
 }
 
 # Kubernetes and Helm Setup

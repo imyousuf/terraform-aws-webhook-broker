@@ -45,3 +45,7 @@ variable "es_instance_type" {
   default     = "t2.medium.elasticsearch"
   description = "ES Instance type to use"
 }
+
+variable "tags" {
+  description = "Tags for ES"
+}

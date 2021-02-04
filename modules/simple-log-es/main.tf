@@ -20,7 +20,7 @@ resource "aws_iam_service_linked_role" "es" {
 
 data "aws_caller_identity" "current" {}
 
-resource "aws_elasticsearch_domain" "test_w7b6" {
+resource "aws_elasticsearch_domain" "es_domain" {
   count                 = var.create_es ? 1 : 0
   domain_name           = var.es_domain
   elasticsearch_version = var.es_version
@@ -59,8 +59,6 @@ resource "aws_elasticsearch_domain" "test_w7b6" {
 }
 CONFIG
 
-  tags = {
-    Domain = "test-w7b6"
-  }
+  tags       = var.tags
   depends_on = [aws_iam_service_linked_role.es]
 }

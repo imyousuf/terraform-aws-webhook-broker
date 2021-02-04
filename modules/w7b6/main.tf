@@ -4,7 +4,6 @@ locals {
 
 module "mysql" {
   source                    = "../w7b6-mysql/"
-  db_password               = var.db_password
   subnets                   = var.subnets
   vpc_id                    = var.vpc_id
   create                    = var.create && var.create_rds
@@ -13,6 +12,16 @@ module "mysql" {
   db_instance_class         = var.db_instance_class
   default_security_group_id = var.default_security_group_id
   sg_cidr_blocks            = var.sg_cidr_blocks
+  identifier                = "w7b6"
+  final_snapshot_identifier = "w7b6snap"
+  db_name                   = "webhook_broker"
+  db_username               = var.db_username
+  db_password               = var.db_password
+  tags = {
+    Owner       = "user"
+    Environment = "dev"
+  }
+
 }
 
 resource "kubernetes_namespace" "webhook_broker_namespace" {
