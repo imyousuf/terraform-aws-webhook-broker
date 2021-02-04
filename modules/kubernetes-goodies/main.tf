@@ -82,8 +82,8 @@ resource "kubernetes_cluster_role_binding" "cluster-admin-binding" {
   }
   subject {
     kind      = "ServiceAccount"
-    name      = local.k8s_dashboard_namespace
-    namespace = local.k8s_service_account_namespace
+    name      = local.k8s_dashboard_service_account_name
+    namespace = local.k8s_dashboard_namespace
   }
 }
 
