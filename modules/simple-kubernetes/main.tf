@@ -39,7 +39,7 @@ module "eks" {
 
   worker_groups = [
     {
-      name                 = "worker-group-1"
+      name                 = "${var.cluster_name}-worker-group-1"
       asg_desired_capacity = var.on_demand_desired_capacity
       asg_min_size         = var.on_demand_min_size
       asg_max_size         = var.on_demand_max_size
@@ -48,7 +48,7 @@ module "eks" {
       tags                 = local.asg_tags
     },
     {
-      name                     = "worker-spot-group-1"
+      name                     = "${var.cluster_name}-worker-spot-group-1"
       asg_desired_capacity     = var.spot_desired_capacity
       asg_max_size             = var.spot_max_size
       kubelet_extra_args       = "--node-labels=node.kubernetes.io/lifecycle=spot"
