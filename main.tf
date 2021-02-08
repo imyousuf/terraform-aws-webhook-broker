@@ -96,20 +96,8 @@ module "eks" {
   vpc_id                          = module.vpc.vpc_id
   cluster_endpoint_private_access = false
   cluster_endpoint_public_access  = true
-  map_users = [
-    {
-      userarn  = "arn:aws:iam::<ACCOUNT_NUMBER>:user/<USER_NAME>"
-      username = "<USER_NAME>"
-      groups   = ["system:masters"]
-    }
-  ]
-  map_roles = [
-    {
-      rolearn  = "arn:aws:iam::<ACCOUNT_NUMBER>:role/<ROLE_NAME>"
-      username = "<ROLE_NAME>"
-      groups   = ["system:masters"]
-    },
-  ]
+  map_users                       = var.map_users
+  map_roles                       = var.map_roles
 }
 
 # RDS

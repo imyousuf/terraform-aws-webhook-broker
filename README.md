@@ -47,6 +47,20 @@ webhook_broker_access_log_path   = "path-prefix"
 webhook_broker_hostname          = "match-hostname-to-certificate"
 webhook_broker_log_bucket        = "cluster-log-bucket"
 webhook_broker_log_path          = "cluster/path/prefix"
+map_roles = [
+    {
+      rolearn  = "arn:aws:iam::<ACCOUNT_NUMBER>:role/<ROLE_NAME>"
+      username = "<ROLE_NAME>"
+      groups   = ["system:masters"]
+    }
+  ]
+map_users = [
+    {
+      userarn  = "arn:aws:iam::<ACCOUNT_NUMBER>:user/<USER_NAME>"
+      username = "<USER_NAME>"
+      groups   = ["system:masters"]
+    }
+  ]
 ```
 
 The `kubernetes-dashboard` ingress controller is disabled by default as we are deploying the cluster in public subnet; please consider enabling it when deploying in a private subnet by passing [Helm Chart values](https://artifacthub.io/packages/helm/k8s-dashboard/kubernetes-dashboard).

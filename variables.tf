@@ -72,3 +72,25 @@ variable "webhook_broker_hostname" {
   default     = "one.test.w7b6.net"
   description = "The DNS Entry to associate with ALB; if there is already record set `external-dns` will not override it"
 }
+
+variable "map_users" {
+  default = [
+    {
+      userarn  = "arn:aws:iam::<ACCOUNT_NUMBER>:user/<USER_NAME>"
+      username = "<USER_NAME>"
+      groups   = ["system:masters"]
+    }
+  ]
+  description = "The users mapped for the kubernetes cluster"
+}
+
+variable "map_roles" {
+  default = [
+    {
+      rolearn  = "arn:aws:iam::<ACCOUNT_NUMBER>:role/<ROLE_NAME>"
+      username = "<ROLE_NAME>"
+      groups   = ["system:masters"]
+    },
+  ]
+  description = "The roles mapped for the kubernetes cluster"
+}
