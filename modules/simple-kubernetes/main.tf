@@ -4,7 +4,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "3.22.0"
+      version = ">= 3.27.0"
     }
   }
 }
@@ -26,7 +26,7 @@ locals {
 
 module "eks" {
   source                          = "terraform-aws-modules/eks/aws"
-  version                         = "13.2.1"
+  version                         = "14.0.0"
   cluster_name                    = var.cluster_name
   cluster_version                 = var.k8s_version
   subnets                         = var.subnets
@@ -36,6 +36,10 @@ module "eks" {
   cluster_endpoint_public_access  = var.cluster_endpoint_public_access
   map_users                       = var.map_users
   map_roles                       = var.map_roles
+
+  workers_group_defaults = {
+    root_volume_type = "gp2"
+  }
 
   worker_groups = [
     {

@@ -61,7 +61,7 @@ resource "aws_iam_policy" "cluster_autoscaler" {
 
 module "iam_assumable_role_admin" {
   source                        = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
-  version                       = "3.6.0"
+  version                       = "3.8.0"
   create_role                   = true
   role_name                     = "cluster-autoscaler"
   provider_url                  = replace(var.cluster_oidc_issuer_url, "https://", "")
@@ -144,7 +144,7 @@ resource "aws_iam_policy" "alb_ingress_controller" {
 
 module "iam_assumable_role_ingress" {
   source                        = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
-  version                       = "3.6.0"
+  version                       = "3.8.0"
   create_role                   = true
   role_name                     = "alb-ingress"
   provider_url                  = replace(var.cluster_oidc_issuer_url, "https://", "")
@@ -174,7 +174,7 @@ resource "aws_iam_policy" "external_dns" {
 
 module "iam_assumable_role_external_dns" {
   source                        = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
-  version                       = "3.6.0"
+  version                       = "3.8.0"
   create_role                   = true
   role_name                     = "external-dns"
   provider_url                  = replace(var.cluster_oidc_issuer_url, "https://", "")
@@ -235,7 +235,7 @@ resource "aws_iam_policy" "fluent_bit" {
 
 module "iam_assumable_role_fluent_bit" {
   source                        = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
-  version                       = "3.6.0"
+  version                       = "3.8.0"
   create_role                   = true
   role_name                     = "fluent-bit"
   provider_url                  = replace(var.cluster_oidc_issuer_url, "https://", "")
