@@ -70,6 +70,11 @@ module "rds" {
     {
       name  = "transaction_isolation"
       value = "READ-COMMITTED"
+    },
+    {
+      name  = "innodb_dedicated_server"
+      value = "ON"
+      apply_method = "pending-reboot"
     }
   ]
 
