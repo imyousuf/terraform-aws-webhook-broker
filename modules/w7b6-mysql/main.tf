@@ -66,6 +66,10 @@ module "rds" {
     {
       name  = "character_set_server"
       value = "utf8"
+    },
+    {
+      name  = "transaction_isolation"
+      value = "READ-COMMITTED"
     }
   ]
 
