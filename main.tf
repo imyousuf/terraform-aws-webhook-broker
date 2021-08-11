@@ -14,7 +14,7 @@ locals {
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "2.70.0"
+  version = "3.3.0"
 
   name = "webhook-broker-vpc"
 
